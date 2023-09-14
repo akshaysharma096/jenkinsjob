@@ -82,7 +82,7 @@ async function waitJenkinsJob(jobName, timestamp, headers) {
     if (data.timestamp < timestamp) {
       core.info(`>>> Job is not started yet... Wait 5 seconds more...`);
     } else if (data.result == "SUCCESS") {
-      core.info(`Successfully completed! >>> Job URL: Job URL: "${data.url}"`);
+      core.info(`Successfully completed! >> Job URL: "${data.url}"`);
       break;
     } else if (data.result == "FAILURE" || data.result == "ABORTED") {
       throw new Error(`Failed >> Job URL: "${data.url}"`);
