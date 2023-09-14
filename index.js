@@ -85,7 +85,7 @@ async function waitJenkinsJob(jobName, timestamp, headers) {
       core.info(`>>> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}" successfully completed!`);
       break;
     } else if (data.result == "FAILURE" || data.result == "ABORTED") {
-      throw new Error(`Failed job ${data.fullDisplayName}`);
+      throw new Error(`Failed >> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}"`);
     } else {
       core.info(`>>> Current Duration: ${data.duration}. Expected: ${data.estimatedDuration}`);
     }
