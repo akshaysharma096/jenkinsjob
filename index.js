@@ -74,7 +74,7 @@ async function getJobStatus(jobName, headers) {
     );
 }
 
-async function waitJenkinsJob(jobName, timestamp, headers) {
+async function iwaitJenkinsJob(jobName, timestamp, headers) {
   const jenkinsEndpoint = core.getInput('url');
   core.info(`>>> Waiting for "${jobName}" ...`);
   while (true) {
@@ -92,6 +92,30 @@ async function waitJenkinsJob(jobName, timestamp, headers) {
     await sleep(5); // API call interval
   }
 }
+
+
+async function waitJenkinsJob(jobName, timestamp, headers) {
+  const jenkinsEndpoint = core.getInput('url');
+  core.info(`>>> Waiting for "${jobName}" ...`);
+  while (true) {
+    let data = await getJobStatus(jobName, headers);
+    if (data.timestamp < timestamp) {
+      core.info(`>>> Job is not started yet... Wait 5 seconds more...`);
+    } else if (data.result == "SUCCESS") {
+      core.info(`>>> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}" successfully completed!`);
+      core.info(`>>> Job Attributes:\n${JSON.stringify(data, null, 2)}`); // Print full attributes
+      break;
+    } else if (data.result == "FAILURE" || data.result == "ABORTED") {
+      core.error(`Failed >> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}"`);
+      core.info(`>>> Job Attributes:\n${JSON.stringify(data, null, 2)}`); // Print full attributes
+      throw new Error(`Failed >> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}"`);
+    } else {
+      core.info(`>>> Current Duration: ${data.duration}. Expected: ${data.estimatedDuration}`);
+    }
+    await sleep(5); // API call interval
+  }
+}
+
 
 async function main() {
   try {
