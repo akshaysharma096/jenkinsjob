@@ -1,8 +1,5 @@
-name: 'Jenkins Job Trigger'
-description: 'Trigger a Jenkins job'
-branding:
-  icon: 'terminal'
-  color: 'green'
+name: 'Jenkins Job Start'
+description: 'Jenkins job'
 inputs:
   url:
     description: 'Jenkins full URL including http/https protocol'
@@ -30,6 +27,7 @@ inputs:
     description: 'Timeout (seconds) for github action. Set 600s as default'
     required: false
     default: "600"  
+    
 runs:
   using: 'node12'
   main: 'index.js'
