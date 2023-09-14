@@ -106,7 +106,7 @@ async function waitJenkinsJob(jobName, timestamp, headers) {
       core.info(`>>> Job Attributes:\n${JSON.stringify(data, null, 2)}`); // Print full attributes
       break;
     } else if (data.result == "FAILURE" || data.result == "ABORTED") {
-      core.error(`Failed >> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}"`);
+      core.error(`Failed >> Job URL: ${data.url}"`);
       core.info(`>>> Job Attributes:\n${JSON.stringify(data, null, 2)}`); // Print full attributes
       throw new Error(`Failed >> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}"`);
     } else {
