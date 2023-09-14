@@ -73,14 +73,15 @@ async function getJobStatus(jobName, headers) {
       })
     );
 }
-async function waitJenkinsJob(jobName, timestamp, headers) {
+
+async function waitJenkinsJob(jobName, timestamp, headers, jenkinsEndpoint) {
   core.info(`>>> Waiting for "${jobName}" ...`);
   while (true) {
     let data = await getJobStatus(jobName, headers);
     if (data.timestamp < timestamp) {
-      core.info(`>>> Job is not started yet... Wait 5 seconds more...`)
+      core.info(`>>> Job is not started yet... Wait 5 seconds more...`);
     } else if (data.result == "SUCCESS") {
-      core.info(`>>> Job "${data.fullDisplayName}" successfully completed!`);
+      core.info(`>>> Job URL: ${jenkinsEndpoint}/job/${jobName}/\n>>> Job "${data.fullDisplayName}" successfully completed!`);
       break;
     } else if (data.result == "FAILURE" || data.result == "ABORTED") {
       throw new Error(`Failed job ${data.fullDisplayName}`);
@@ -119,7 +120,7 @@ async function main() {
 
     // Waiting for job completion
     if (core.getInput('wait') == 'true') {
-      await waitJenkinsJob(jobName, startTs, headers);
+      await waitJenkinsJob(jobName, startTs, headers, jenkinsEndpoint);
     }
   } catch (err) {
     core.setFailed(err.message);
