@@ -1,4 +1,4 @@
-name: 'Jenkins Job Start'
+name: 'jenkins-job-start'
 description: 'Jenkins job'
 inputs:
   url:
