@@ -74,7 +74,8 @@ async function getJobStatus(jobName, headers) {
     );
 }
 
-async function waitJenkinsJob(jobName, timestamp, headers, jenkinsEndpoint) {
+async function waitJenkinsJob(jobName, timestamp, headers) {
+  const jenkinsEndpoint = core.getInput('url');
   core.info(`>>> Waiting for "${jobName}" ...`);
   while (true) {
     let data = await getJobStatus(jobName, headers);
@@ -120,7 +121,7 @@ async function main() {
 
     // Waiting for job completion
     if (core.getInput('wait') == 'true') {
-      await waitJenkinsJob(jobName, startTs, headers, jenkinsEndpoint);
+      await waitJenkinsJob(jobName, startTs, headers);
     }
   } catch (err) {
     core.setFailed(err.message);
