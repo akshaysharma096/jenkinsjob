@@ -29,8 +29,7 @@ inputs:
   timeout:
     description: 'Timeout (seconds) for github action. Set 600s as default'
     required: false
-    default: "600"
-  
+    default: "600"  
 runs:
   using: 'node12'
   main: 'index.js'
