@@ -69,7 +69,7 @@ async function getJobStatus(jobName, statusUrl) {
           return;
         }
         core.info(`The response code is ${res.statusCode}`);
-        core.info(`The body of respons is: ${res.statusCode}`);
+        core.info(`The body of respons is: ${body}`);
         resolve(JSON.parse(body));
       })
     );
