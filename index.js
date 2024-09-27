@@ -1,11 +1,20 @@
 const request = require("request");
 const core = require("@actions/core");
 
+// if the API requests fail more than threshold, we will cause exit the script with error code
+const FAILURE_THRESHOLD = 10;
+
 class BadGatewayError extends Error {
   constructor(message) {
     super(message);
     this.name = "BadGatewayError";
-    this.statusCode = 502;
+  }
+}
+
+class JenkinsAPIError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "WorkflowFailedError";
   }
 }
 
@@ -63,6 +72,8 @@ async function triggerJenkinsJob(jobName, params) {
 async function getJobStatus(jobName, statusUrl) {
   if (!statusUrl.endsWith("/")) statusUrl += "/";
 
+  let failureCount = 0;
+
   const req = {
     method: "GET",
     url: `${statusUrl}api/json`,
@@ -78,12 +89,24 @@ async function getJobStatus(jobName, statusUrl) {
         return;
       }
       core.info(`The response code from Jenkins API is: ${res.statusCode}`);
-      if (res.statusCode == 200) {
-        resolve(JSON.parse(body));
-      } else {
-        throw new BadGatewayError(
-          `Wrong http response from host - ${res.statusCode}`
-        );
+      switch (res.statusCode) {
+        case 200:
+          resolve(JSON.parse(body));
+          break;
+        case 502:
+          if (failureCount > FAILURE_THRESHOLD) {
+            throw new JenkinsAPIError(
+              "Failure Threshold reached, exiting script....."
+            );
+          }
+          failureCount += 1;
+          throw new BadGatewayError(
+            `Wrong http response from host - ${res.statusCode}`
+          );
+        default:
+          throw new JenkinsAPIError(
+            `Unknown API error code received: ${res.statusCode}`
+          );
       }
     })
   );
