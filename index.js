@@ -94,18 +94,24 @@ async function getJobStatus(jobName, statusUrl) {
           break;
         case 502:
           if (failureCount > FAILURE_THRESHOLD) {
-            throw new JenkinsAPIError(
-              "Failure Threshold reached, exiting script....."
-            );
+            reject(
+              new JenkinsAPIError(
+                "Failure Threshold reached, exiting script....."
+              )
+            ); // Reject with JenkinsAPIError if threshold reached
           }
           failureCount += 1;
-          throw new BadGatewayError(
-            `Wrong http response from host - ${res.statusCode}`
-          );
+          reject(
+            new BadGatewayError(
+              `Wrong http response from host - ${res.statusCode}`
+            )
+          ); // Reject with BadGatewayError
         default:
-          throw new JenkinsAPIError(
-            `Unknown API error code received: ${res.statusCode}`
-          );
+          reject(
+            new JenkinsAPIError(
+              `Unknown API error code received: ${res.statusCode}`
+            )
+          ); // Reject with JenkinsAPIError on unknown status
       }
     })
   );
