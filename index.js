@@ -3,6 +3,7 @@ const core = require("@actions/core");
 
 // if the API requests fail more than threshold, we will cause exit the script with error code
 const FAILURE_THRESHOLD = 10;
+let failureCount = 0;
 
 class BadGatewayError extends Error {
   constructor(message) {
@@ -72,8 +73,6 @@ async function triggerJenkinsJob(jobName, params) {
 async function getJobStatus(jobName, statusUrl) {
   if (!statusUrl.endsWith("/")) statusUrl += "/";
 
-  let failureCount = 0;
-
   const req = {
     method: "GET",
     url: `${statusUrl}api/json`,
@@ -120,54 +119,57 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
   while (true) {
     // check the queue until the job is assigned a build number
     if (!buildUrl) {
-      try {
-        let queueData = await getJobStatus(jobName, queueItemUrl);
+      let queueData = await getJobStatus(jobName, queueItemUrl);
 
-        if (queueData.cancelled)
-          throw new Error(`Job '${jobName}' was cancelled.`);
+      if (queueData.cancelled)
+        throw new Error(`Job '${jobName}' was cancelled.`);
 
-        if (queueData.executable && queueData.executable.url) {
-          buildUrl = queueData.executable.url;
-          core.info(
-            `>>> Job '${jobName}' started executing. BuildUrl=${buildUrl}`
-          );
-        }
+      if (queueData.executable && queueData.executable.url) {
+        buildUrl = queueData.executable.url;
+        core.info(
+          `>>> Job '${jobName}' started executing. BuildUrl=${buildUrl}`
+        );
+      }
 
-        if (!buildUrl) {
-          core.info(
-            `>>> Job '${jobName}' is queued (Reason: '${queueData.why}'). Sleeping for ${sleepInterval}s...`
-          );
-          await sleep(sleepInterval);
-          continue;
-        }
-      } catch (error) {
-        if (error instanceof BadGatewayError) {
-          core.info(`Received BadGatewayError for Job ${jobName}`);
-          await sleep(sleepInterval);
-          continue;
-        } else {
-          throw new Error(
-            `Unexpected error in Job '${buildData.fullDisplayName}',  ${error.message}`
-          );
-        }
+      if (!buildUrl) {
+        core.info(
+          `>>> Job '${jobName}' is queued (Reason: '${queueData.why}'). Sleeping for ${sleepInterval}s...`
+        );
+        await sleep(sleepInterval);
+        continue;
       }
     }
 
-    let buildData = await getJobStatus(jobName, buildUrl);
+    try {
+      let buildData = await getJobStatus(jobName, buildUrl);
 
-    if (buildData.result == "SUCCESS") {
+      if (buildData.result == "SUCCESS") {
+        core.info(
+          `>>> Job '${buildData.fullDisplayName}' completed successfully!`
+        );
+        break;
+      } else if (
+        buildData.result == "FAILURE" ||
+        buildData.result == "ABORTED"
+      ) {
+        throw new Error(`Job '${buildData.fullDisplayName}' failed.`);
+      }
+
       core.info(
-        `>>> Job '${buildData.fullDisplayName}' completed successfully!`
+        `>>> Job '${buildData.fullDisplayName}' is executing (Duration: ${buildData.duration}ms, Expected: ${buildData.estimatedDuration}ms). Sleeping for ${sleepInterval}s...`
       );
-      break;
-    } else if (buildData.result == "FAILURE" || buildData.result == "ABORTED") {
-      throw new Error(`Job '${buildData.fullDisplayName}' failed.`);
+      await sleep(sleepInterval); // API call interval
+    } catch (error) {
+      if (error instanceof BadGatewayError) {
+        core.info(`Received BadGatewayError for Job ${jobName}`);
+        await sleep(sleepInterval);
+        continue;
+      } else {
+        throw new Error(
+          `Unexpected error in Job '${buildData.fullDisplayName}',  ${error.message}`
+        );
+      }
     }
-
-    core.info(
-      `>>> Job '${buildData.fullDisplayName}' is executing (Duration: ${buildData.duration}ms, Expected: ${buildData.estimatedDuration}ms). Sleeping for ${sleepInterval}s...`
-    );
-    await sleep(sleepInterval); // API call interval
   }
 }
 
