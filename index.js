@@ -150,7 +150,7 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
     try {
       let buildData = await getJobStatus(jobName, buildUrl);
       
-      core.info(`buildData is: ${ util.inspect(buildData, {depth: null}) }`);
+      core.info(`buildData is: ${ util.inspect(buildData.result, {depth: null}) }`);
       
       if (buildData.result == "SUCCESS") {
         core.info(
