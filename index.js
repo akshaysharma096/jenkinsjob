@@ -1,5 +1,6 @@
 const request = require("request");
 const core = require("@actions/core");
+const util = require('util');
 
 // if the API requests fail more than threshold, we will cause exit the script with error code
 const FAILURE_THRESHOLD = 10;
@@ -149,7 +150,7 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
     try {
       let buildData = await getJobStatus(jobName, buildUrl);
       
-      core.info(`buildData is: ${buildData}`);
+      core.info(`buildData is: ${ util.inspect(buildData, {depth: null}) }`);
       
       if (buildData.result == "SUCCESS") {
         core.info(
