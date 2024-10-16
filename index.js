@@ -157,7 +157,7 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
       }
 
       core.info(
-        `buildData is: ${util.inspect(buildData.result, { depth: null })}`
+        `Current result for the job completion is (null meaninng in progress): ${util.inspect(buildData.result, { depth: null })}`
       );
 
       if (buildData.result == "SUCCESS") {
@@ -183,7 +183,7 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
         continue;
       } else {
         core.info(
-          `Unexpected error happened in the Jenkinsjob (prod-to-env sync): ${error.message}`
+          `Something went wrong in the Jenkinsjob (prod-to-env sync): ${error.message}`
         );
         throw new Error(`Prod-to-env sync job failed,  ${error.message}`);
       }
