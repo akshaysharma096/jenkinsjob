@@ -1,6 +1,6 @@
 const request = require("request");
 const core = require("@actions/core");
-const util = require('util');
+const util = require("util");
 
 // if the API requests fail more than threshold, we will cause exit the script with error code
 const FAILURE_THRESHOLD = 10;
@@ -84,9 +84,9 @@ async function getJobStatus(jobName, statusUrl) {
   return new Promise((resolve, reject) =>
     request(req, (err, res, body) => {
       if (err) {
+        core.info(`Received an error: ${err.message}`);
         clearTimeout(timer);
         reject(err);
-        return;
       }
       core.info(`The response code from Jenkins API is: ${res.statusCode}`);
       switch (res.statusCode) {
@@ -149,9 +149,17 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
 
     try {
       let buildData = await getJobStatus(jobName, buildUrl);
-      
-      core.info(`buildData is: ${ util.inspect(buildData.result, {depth: null}) }`);
-      
+
+      if (!buildData) {
+        core.info("buildData is empty - waiting....");
+        await sleep(sleepInterval);
+        continue;
+      }
+
+      core.info(
+        `buildData is: ${util.inspect(buildData.result, { depth: null })}`
+      );
+
       if (buildData.result == "SUCCESS") {
         core.info(
           `>>> Job '${buildData.fullDisplayName}' completed successfully!`
@@ -174,9 +182,10 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
         await sleep(sleepInterval);
         continue;
       } else {
-        throw new Error(
-          `Unexpected error in Job '${buildData.fullDisplayName}',  ${error.message}`
+        core.info(
+          `Unexpected error happened in the Jenkinsjob (prod-to-env sync): ${error.message}`
         );
+        throw new Error(`Prod-to-env sync job failed,  ${error.message}`);
       }
     }
   }
