@@ -142,7 +142,7 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
           `>>> Job '${jobName}' started executing. BuildUrl=${buildUrl}`
         );
         jenkinsBuildUrl =
-          typeof jenkinsBuildUrl == "undefined" ? undefined : buildUrl;
+          typeof jenkinsBuildUrl == "undefined" ? buildUrl : buildUrl;
 
         if (jenkinsBuildUrl) {
           core.setOutput("jenkinsBuildUrl", jenkinsBuildUrl);
@@ -168,7 +168,9 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
       }
 
       if (buildData.result == "SUCCESS") {
-        core.info(`Received 'SUCCESS' response from JenkinsAPI, successCount: ${successCount}`)
+        core.info(
+          `Received 'SUCCESS' response from JenkinsAPI, successCount: ${successCount}`
+        );
         if (successCount >= SUCCESS_THRESHOLD) {
           core.info(
             `>>> Job '${buildData.fullDisplayName}' - ${jenkinsBuildUrl}, completed successfully!`
