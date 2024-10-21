@@ -168,7 +168,8 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
       }
 
       if (buildData.result == "SUCCESS") {
-        if (successCount > SUCCESS_THRESHOLD) {
+        core.info(`Received 'SUCCESS' response from JenkinsAPI, successCount: ${successCount}`)
+        if (successCount >= SUCCESS_THRESHOLD) {
           core.info(
             `>>> Job '${buildData.fullDisplayName}' - ${jenkinsBuildUrl}, completed successfully!`
           );
