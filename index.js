@@ -4,7 +4,12 @@ const util = require("util");
 
 // if the API requests fail more than threshold, we will cause exit the script with error code
 const FAILURE_THRESHOLD = 10;
+
+// the following variable is added so we can check for intermittent success messages from JenkinsAPI
+const SUCCESS_THRESHOLD = 3;
 let failureCount = 0;
+let successCount = 0;
+let jenkinsBuildUrl;
 
 class BadGatewayError extends Error {
   constructor(message) {
@@ -120,7 +125,7 @@ async function getJobStatus(jobName, statusUrl) {
 
 // see https://issues.jenkins.io/browse/JENKINS-12827
 async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
-  const sleepInterval = 5;
+  const sleepInterval = 10;
   let buildUrl = undefined;
   core.info(`>>> Waiting for '${jobName}' ...`);
   while (true) {
@@ -136,6 +141,12 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
         core.info(
           `>>> Job '${jobName}' started executing. BuildUrl=${buildUrl}`
         );
+        jenkinsBuildUrl =
+          typeof jenkinsBuildUrl == "undefined" ? undefined : buildUrl;
+
+        if (jenkinsBuildUrl) {
+          core.setOutput("jenkinsBuildUrl", jenkinsBuildUrl);
+        }
       }
 
       if (!buildUrl) {
@@ -156,24 +167,25 @@ async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
         continue;
       }
 
-      core.info(
-        `Current result for the job completion is (null meaninng in progress): ${util.inspect(buildData.result, { depth: null })}`
-      );
-
       if (buildData.result == "SUCCESS") {
-        core.info(
-          `>>> Job '${buildData.fullDisplayName}' completed successfully!`
-        );
-        break;
+        if (successCount > SUCCESS_THRESHOLD) {
+          core.info(
+            `>>> Job '${buildData.fullDisplayName}' - ${jenkinsBuildUrl}, completed successfully!`
+          );
+          break;
+        }
+        successCount += 1;
       } else if (
         buildData.result == "FAILURE" ||
         buildData.result == "ABORTED"
       ) {
-        throw new Error(`Job '${buildData.fullDisplayName}' failed.`);
+        throw new Error(
+          `Job '${buildData.fullDisplayName}' - ${jenkinsBuildUrl} failed.`
+        );
       }
 
       core.info(
-        `>>> Job '${buildData.fullDisplayName}' is executing (Duration: ${buildData.duration}ms, Expected: ${buildData.estimatedDuration}ms). Sleeping for ${sleepInterval}s...`
+        `>>> Job '${buildData.fullDisplayName}' is executing. Sleeping for ${sleepInterval}s...`
       );
       await sleep(sleepInterval); // API call interval
     } catch (error) {
